@@ -1,6 +1,12 @@
 /*******************************************************************************
 ** Project: Chinese Flash Cards
-** Current Version: 0.0.2.7
+** Current Version: 0.0.2.8
+*******************************************************************************/
+/* Version 0.0.2.8 *************************************************************
+** 8/15/17 Moved all functions below main().  Created function prototypes
+    Created array of shuffled numbers for all cards.  User now inputs number of
+    cycles to go though all cards.  Cards are shuffled each cycle.
+    Bug: Random number generator in shuffle() isn't working
 *******************************************************************************/
 /* Version 0.0.2.7 *************************************************************
 ** 8/12/17 Fixed bug where all flash cards print at the beginning
@@ -48,12 +54,135 @@
 #include <stdio.h> // printf and file
 #include <stdlib.h> // exit
 #include <string.h> // strcpy
-#include <time.h>
+#include <time.h> // rand
 
 #define FLASH_ERROR_OPEN_FILE -1000
 #define FLASH_EMPTY_LINE_IN_FILE -1100
 #define FLASH_NO_SEPARATOR_ON_LINE -1200
 #define FLASH_MULTIPLE_SEPARATORS_ON_LINE -1300
+
+int inputArgumentsCheck(int numberOfArguments, char *version);
+int fileScan(char *fileName, int *maxLine, int *lineNumber);
+int check(int rc);
+int fillLanguageStrings(char *fileName, char **lang0, char **lang1, int lineNumber);
+int shuffle(int *array, int length);
+
+int main(int argc, char *argv[])
+{
+    char versionString[20];
+    strcpy(versionString, "0.0.2.8");
+    inputArgumentsCheck(argc, versionString);
+    
+    int currentMaxLine = 0; // max characters per line of current file
+    int maxLine = 0; // max characters per line of all scanned files
+    int currentNumOfLines = 0; // number of lines of current file
+    int numOfLines = 0; // number of lines for all scanned files
+    
+    for (int i=1;i<argc;i++)
+    {
+        check(fileScan(argv[i], &currentMaxLine, &currentNumOfLines));
+        if (currentMaxLine > maxLine)
+            maxLine = currentMaxLine;        
+        numOfLines += currentNumOfLines;
+    }
+    maxLine++; // needs one for the null character
+
+    // memory allocation
+    char **cantonese;
+    char **english;
+    
+    cantonese = (char**) malloc(sizeof(char*) * numOfLines);
+    
+    for (int i=0; i<numOfLines; i++)
+        cantonese[i] = (char*) malloc(maxLine);
+    
+    english = (char**) malloc(sizeof(char*) * numOfLines);
+    
+    for (int i=0; i<numOfLines; i++)
+        english[i] = (char*) malloc(maxLine);
+    
+    int *randomCard = (int*) malloc(sizeof(int) * numOfLines); // array for shuffled cards
+    // end memory allocation
+    
+    for (int i=0; i<numOfLines; i++) // fill randomCard array with unshuffled deck
+        randomCard[i] = i + 1;
+    
+    int lineNumber = 0; // current line number
+    
+    for (int i=1; i<(argc); i++)
+            lineNumber = check(fillLanguageStrings(argv[i], cantonese, english, lineNumber));
+    
+    // Gather User input at beginning
+    int input;
+    printf("Which do you want to work on?  Type 1 or 2 and hit enter\n");
+    printf("\n1. Computer gives Cantonese\n");
+    printf("2. Computer gives English\n");
+    scanf("%d", &input);
+    while ((input < 1) || (input > 2))
+    {
+        printf("\nInvalid entry.  Try again:\n");
+        scanf("%d", &input);
+    }
+    
+    // how many times through to go through cards
+    int cycles;
+    printf("There are %d number of cards.  How many cycles through all the cards to practice?\n",numOfLines);
+    printf("\tA cycle will go though and test on all %d cards in a random order\n",numOfLines);
+    scanf("%d", &cycles);
+    while ((cycles < 1) || (cycles > 100))
+    {
+        printf("Invalid entry.  ");
+        if (cycles < 1)
+            printf("Number of cycles must be positive number\n");
+        else
+            printf("Number of cycles must be 100 or less\n");
+        printf("How many cycles to practice?\n");
+        scanf("%d", &cycles);
+    }
+    
+    while(getchar()!='\n'); // clean stdin
+    
+    if (input == 1)
+    {
+        for (int i=0; i<cycles; i++)
+        {
+            check(shuffle(randomCard, numOfLines));
+            for (int i=0;i<numOfLines;i++)
+            {
+                printf("%s", cantonese[i]);
+                while(getchar()!='\n'); // clean stdin
+                printf("%s\n\n", english[i]);
+            }
+        }
+    }
+    else
+    {
+        for (int i=0; i<cycles; i++)
+        {
+            check(shuffle(randomCard, numOfLines));
+            for (int i=0;i<numOfLines;i++)
+            {
+                printf("%s", english[i]);
+                while(getchar()!='\n'); // clean stdin
+                printf("%s\n\n", cantonese[i]);
+            }
+        }
+    }
+    
+    for (int i=0; i<numOfLines; i++)
+    {
+        free(cantonese[i]);
+        free(english[i]);
+    }
+    
+    free(cantonese);
+    free(english);
+    free(randomCard);
+    
+    printf("Done\n");
+    
+    return 0;
+}
 
 /* Function takes number of arguments entered with exe.  If just exe, print out
 version number, and usage example. */
@@ -219,109 +348,22 @@ int fillLanguageStrings(char *fileName, char **lang0, char **lang1, int lineNumb
     return lineNumber;
 }
 
-int main(int argc, char *argv[])
+/* Function takes pointer to array of card order and number of cards and then
+shuffles the card order
+Returns error code - 0 if no error */
+int shuffle(int *array, int length)
 {
-    char versionString[20];
-    strcpy(versionString, "0.0.2.7");
-    inputArgumentsCheck(argc, versionString);
-    
-    int currentMaxLine = 0; // max characters per line of current file
-    int maxLine = 0; // max characters per line of all scanned files
-    int currentNumOfLines = 0; // number of lines of current file
-    int numOfLines = 0; // number of lines for all scanned files
-    
-    for (int i=1;i<argc;i++)
-    {
-        check(fileScan(argv[i], &currentMaxLine, &currentNumOfLines));
-        if (currentMaxLine > maxLine)
-            maxLine = currentMaxLine;        
-        numOfLines += currentNumOfLines;
-    }
-    maxLine++; // needs one for the null character
-
-    
-    char **cantonese;
-    char **english;
-    
-    cantonese = (char**) malloc(sizeof(char*) * numOfLines);
-    
-    for (int i=0; i<numOfLines; i++)
-        cantonese[i] = (char*) malloc(maxLine);
-    
-    english = (char**) malloc(sizeof(char*) * numOfLines);
-    
-    for (int i=0; i<numOfLines; i++)
-        english[i] = (char*) malloc(maxLine);
-    
-    int lineNumber = 0; // current line number
-    
-    for (int i=1; i<(argc); i++)
-            lineNumber = check(fillLanguageStrings(argv[i], cantonese, english, lineNumber));
-    
-    // this is the real thing
-    int input;
-    printf("Which do you want to work on?  Type 1 or 2 and hit enter\n");
-    printf("\n1. Computer gives Cantonese\n");
-    printf("2. Computer gives English\n");
-    scanf("%d", &input);
-    while ((input < 1) || (input > 2))
-    {
-        printf("\nInvalid entry.  Try again:\n");
-        scanf("%d", &input);
-    }
-    
-    // how many cards does user want to practice?
-    int cards;
-    printf("There are %d number of cards.  How many cards to practice?\n",numOfLines);
-    scanf("%d", &cards);
-    while ((cards < 1) || (cards > 100))
-    {
-        printf("Invalid entry.  ");
-        if (cards < 1)
-            printf("Number of cards must be positive number\n");
-        else
-            printf("Number of cards must be 100 or less\n");
-        printf("How many cards to practice?\n");
-        scanf("%d", &cards);
-    }
+    int randomCard; // random card
+    int tempHolder; // holder for current card to replace shuffled card
     
     srand(time(0));  // seed it
     
-    int randomNumber;
-    
-    while(getchar()!='\n'); // clean stdin
-    
-    if (input == 1)
+    for(int i=0;i++;i<length)
     {
-        for (int i=0; i<cards; i++)
-        {
-            randomNumber = rand() % numOfLines;
-            printf("%s", cantonese[randomNumber]);
-            while(getchar()!='\n'); // clean stdin
-            printf("%s\n\n", english[randomNumber]);
-        }
+        randomCard = rand() % length;
+        tempHolder = array[i];
+        array[i] = array[randomCard];
+        array[randomCard] = tempHolder;
     }
-    else
-    {
-        for (int i=0; i<cards; i++)
-        {
-            randomNumber = rand() % numOfLines;
-            printf("%s", english[randomNumber]);
-            while(getchar()!='\n'); // clean stdin
-            printf("%s\n\n", cantonese[randomNumber]);
-        }
-    }
-    
-    for (int i=0; i<numOfLines; i++)
-    {
-        free(cantonese[i]);
-        free(english[i]);
-    }
-    
-    free(cantonese);
-    free(english);
-    
-    printf("Done\n");
-    
     return 0;
 }
