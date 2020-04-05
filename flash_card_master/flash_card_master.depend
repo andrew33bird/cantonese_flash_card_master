@@ -1,0 +1,7 @@
+# depslib dependency file v1.0
+1586050189 source:c:\users\thespencers\andrew\code\cantonese flash card\flash_card_master\main.c
+	<stdio.h>
+	<stdlib.h>
+	<string.h>
+	<time.h>
+
