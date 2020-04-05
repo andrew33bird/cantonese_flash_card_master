@@ -1,6 +1,9 @@
 /*******************************************************************************
 ** Project: Chinese Flash Cards
-** Current Version: 0.0.2.9
+** Current Version: 0.0.2.10
+*******************************************************************************/
+/* Version 0.0.2.10 ************************************************************
+** 8/19/17 Changed variable names from line to card in main()
 *******************************************************************************/
 /* Version 0.0.2.9 *************************************************************
 ** 8/16/17 Fixed bug in 0.0.2.8.  Wasn't printing the shuffled value
@@ -78,41 +81,41 @@ int promptUser(char *promptString, int *userInput, int min, int max);
 int main(int argc, char *argv[])
 {
     char versionString[20];
-    strcpy(versionString, "0.0.2.9");
+    strcpy(versionString, "0.0.2.10");
     inputArgumentsCheck(argc, versionString);
     
-    int currentMaxLine = 0; // max characters per line of current file
-    int maxLine = 0; // max characters per line of all scanned files
-    int currentNumOfLines = 0; // number of lines of current file
-    int numOfLines = 0; // number of lines for all scanned files
+    int currentMaxCard = 0; // max characters per card of current file
+    int maxCard = 0; // max characters per card of all scanned files
+    int currentNumOfCards = 0; // number of cards of current file
+    int numOfCards = 0; // number of flash cards for all scanned files
     
     for (int i=1;i<argc;i++)
     {
-        check(fileScan(argv[i], &currentMaxLine, &currentNumOfLines));
-        if (currentMaxLine > maxLine)
-            maxLine = currentMaxLine;        
-        numOfLines += currentNumOfLines;
+        check(fileScan(argv[i], &currentMaxCard, &currentNumOfCards));
+        if (currentMaxCard > maxCard)
+            maxCard = currentMaxCard;        
+        numOfCards += currentNumOfCards;
     }
-    maxLine++; // needs one for the null character
+    maxCard++; // needs one for the null character
 
     // memory allocation
     char **cantonese;
     char **english;
     
-    cantonese = (char**) malloc(sizeof(char*) * numOfLines);
+    cantonese = (char**) malloc(sizeof(char*) * numOfCards);
     
-    for (int i=0; i<numOfLines; i++)
-        cantonese[i] = (char*) malloc(maxLine);
+    for (int i=0; i<numOfCards; i++)
+        cantonese[i] = (char*) malloc(maxCard);
     
-    english = (char**) malloc(sizeof(char*) * numOfLines);
+    english = (char**) malloc(sizeof(char*) * numOfCards);
     
-    for (int i=0; i<numOfLines; i++)
-        english[i] = (char*) malloc(maxLine);
+    for (int i=0; i<numOfCards; i++)
+        english[i] = (char*) malloc(maxCard);
     
-    int *randomCard = (int*) malloc(sizeof(int) * numOfLines); // array for shuffled cards
+    int *randomCard = (int*) malloc(sizeof(int) * numOfCards); // array for shuffled cards
     // end memory allocation
     
-    for (int i=0; i<numOfLines; i++) // fill randomCard array with unshuffled deck
+    for (int i=0; i<numOfCards; i++) // fill randomCard array with unshuffled deck
         randomCard[i] = i; // fixed in 0.0.2.9 (used to be = i + 1)
     
     int lineNumber = 0; // current line number
@@ -128,7 +131,7 @@ int main(int argc, char *argv[])
     
     // how many times through to go through cards
     int cycles; // number of times to go through the cards
-    sprintf(promptString,"There are %d number of cards.  How many cycles through all the cards to practice?\n\tA cycle will go though and test on all %d cards in a random order\n", numOfLines, numOfLines);
+    sprintf(promptString,"There are %d number of cards.  How many cycles through all the cards to practice?\n\tA cycle will go though and test on all %d cards in a random order\n", numOfCards, numOfCards);
     promptUser(promptString, &cycles, 1, 100);
     
     while(getchar()!='\n'); // clean stdin
@@ -137,8 +140,8 @@ int main(int argc, char *argv[])
     {
         for (int i=0; i<cycles; i++)
         {
-            check(shuffle(randomCard, numOfLines));
-            for (int i=0;i<numOfLines;i++)
+            check(shuffle(randomCard, numOfCards));
+            for (int i=0;i<numOfCards;i++)
             {
                 printf("%s", cantonese[randomCard[i]]);
                 while(getchar()!='\n'); // clean stdin
@@ -150,8 +153,8 @@ int main(int argc, char *argv[])
     {
         for (int i=0; i<cycles; i++)
         {
-            check(shuffle(randomCard, numOfLines));
-            for (int i=0;i<numOfLines;i++)
+            check(shuffle(randomCard, numOfCards));
+            for (int i=0;i<numOfCards;i++)
             {
                 printf("%s", english[randomCard[i]]);
                 while(getchar()!='\n'); // clean stdin
@@ -160,7 +163,7 @@ int main(int argc, char *argv[])
         }
     }
     
-    for (int i=0; i<numOfLines; i++)
+    for (int i=0; i<numOfCards; i++)
     {
         free(cantonese[i]);
         free(english[i]);

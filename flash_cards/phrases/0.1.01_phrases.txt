@@ -1,0 +1,4 @@
+sik6 mat1|What do you want to eat?
+sik6 faan6|Rice
+caau2 faan6|Fried rice
+hou2|Cool
