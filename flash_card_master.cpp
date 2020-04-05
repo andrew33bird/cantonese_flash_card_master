@@ -1,6 +1,18 @@
 /*******************************************************************************
 ** Project: Chinese Flash Cards
-** Current Version: 0.0.2.6
+** Current Version: 0.0.2.7
+*******************************************************************************/
+/* Version 0.0.2.7 *************************************************************
+** 8/12/17 Fixed bug where all flash cards print at the beginning
+    Fixed bug where 'enter' needs to be pressed twice to get answer
+    User enters number of flash cards to practice at beginning
+    Added error message routine and #defines for error codes
+*******************************************************************************/
+/* Version 0.0.2.6 *************************************************************
+** Unknown date Program takes in files from input arguments.
+    Asks user to pick English or Chinese
+    Prints on, then waits to get answer.  Uses simple random number generator
+    Does a fixed 20 flash cards
 *******************************************************************************/
 /* Version 0.0.1.5 *************************************************************
 ** 5/27/17 Program name change to flashCardMaster
@@ -15,8 +27,8 @@
 ********************************************************************************
 ** Version 0.0.0.3 *************************************************************
 ** 5/8/17 Rev 0.0.0.3 compiles, but test.txt always throws error -1200
-** 5/8/17 Creates 50 lines of 100 characters.  Throws error if exceeds 
-        -1400 Error if line count > 50 or character count > 100
+** 5/8/17 VOID Creates 50 lines of 100 characters.  Throws error if exceeds 
+        VOID -1400 Error if line count > 50 or character count > 100
 ********************************************************************************
 ** Version 0.0.0.2 *************************************************************
 ** 5/6/17 Rev 0.0.0.2 does not compile.  Variable length array is not in C
@@ -37,6 +49,11 @@
 #include <stdlib.h> // exit
 #include <string.h> // strcpy
 #include <time.h>
+
+#define FLASH_ERROR_OPEN_FILE -1000
+#define FLASH_EMPTY_LINE_IN_FILE -1100
+#define FLASH_NO_SEPARATOR_ON_LINE -1200
+#define FLASH_MULTIPLE_SEPARATORS_ON_LINE -1300
 
 /* Function takes number of arguments entered with exe.  If just exe, print out
 version number, and usage example. */
@@ -64,7 +81,7 @@ int fileScan(char *fileName, int *maxLine, int *lineNumber)
     
     f = fopen(fileName, "r");
     if (f == NULL)
-        return -1000;
+        return FLASH_ERROR_OPEN_FILE;
     
     int numberOfChars = 0; // number of characters for the current line
     int newLineFlag = 1; // flag when at a new line.  Starts with new line
@@ -83,9 +100,9 @@ int fileScan(char *fileName, int *maxLine, int *lineNumber)
             numberOfChars = 0;
             *lineNumber = *lineNumber + 1;
             if (newLineFlag == 1)
-                return -1100;
+                return FLASH_EMPTY_LINE_IN_FILE;
             else if (pipeRead = 0)
-                return -1200;
+                return FLASH_NO_SEPARATOR_ON_LINE;
             else
                 newLineFlag = 1;
         }
@@ -95,7 +112,7 @@ int fileScan(char *fileName, int *maxLine, int *lineNumber)
                 *maxLine = numberOfChars;
             numberOfChars = 0;
             if (pipeRead == 1)
-                return -1300;
+                return FLASH_MULTIPLE_SEPARATORS_ON_LINE;
             else
                 pipeRead = 1;
         }
@@ -109,9 +126,9 @@ int fileScan(char *fileName, int *maxLine, int *lineNumber)
     if (newLineFlag == 0)
     {
         if ((c == '|') && (pipeRead == 1))
-            return -1300;
+            return FLASH_MULTIPLE_SEPARATORS_ON_LINE;
         else if ((c != '|') && (pipeRead == 0))
-            return -1200;
+            return FLASH_NO_SEPARATOR_ON_LINE;
         else if (c == '|')
         {
             if (numberOfChars > *maxLine)
@@ -135,7 +152,25 @@ int check(int rc)
 {
     if (rc < 0)
     {
-        printf("Error: %d\n", rc);
+        char message[1024];
+        switch(rc)
+        {
+            case FLASH_ERROR_OPEN_FILE :
+                strcpy(message,"Error opening file");
+                break;
+            case FLASH_EMPTY_LINE_IN_FILE :
+                strcpy(message,"Empty Line in file");
+                break;
+            case FLASH_NO_SEPARATOR_ON_LINE :
+                strcpy(message,"No '|' separator on line");
+                break;
+            case FLASH_MULTIPLE_SEPARATORS_ON_LINE :
+                strcpy(message,"Multiple '|' separators on line");
+                break;
+            default :
+                strcpy(message,"Unknown error");
+        }
+        printf("Error: %s\n", message);
         exit(rc);
     }
     return rc;
@@ -150,7 +185,7 @@ int fillLanguageStrings(char *fileName, char **lang0, char **lang1, int lineNumb
     
     f = fopen(fileName, "r");
     if (f == NULL)
-        return -1000;
+        return FLASH_ERROR_OPEN_FILE;
     
     char c;
     int i = 0;  // index of string
@@ -187,7 +222,7 @@ int fillLanguageStrings(char *fileName, char **lang0, char **lang1, int lineNumb
 int main(int argc, char *argv[])
 {
     char versionString[20];
-    strcpy(versionString, "0.0.2.6");
+    strcpy(versionString, "0.0.2.7");
     inputArgumentsCheck(argc, versionString);
     
     int currentMaxLine = 0; // max characters per line of current file
@@ -223,12 +258,6 @@ int main(int argc, char *argv[])
     for (int i=1; i<(argc); i++)
             lineNumber = check(fillLanguageStrings(argv[i], cantonese, english, lineNumber));
     
-    for (int i=0; i<(numOfLines-2); i++)
-    {
-        printf("Cantonese: %s\n", cantonese[i]);
-        printf("English: %s\n", english[i]);
-    }
-    
     // this is the real thing
     int input;
     printf("Which do you want to work on?  Type 1 or 2 and hit enter\n");
@@ -241,30 +270,45 @@ int main(int argc, char *argv[])
         scanf("%d", &input);
     }
     
+    // how many cards does user want to practice?
+    int cards;
+    printf("There are %d number of cards.  How many cards to practice?\n",numOfLines);
+    scanf("%d", &cards);
+    while ((cards < 1) || (cards > 100))
+    {
+        printf("Invalid entry.  ");
+        if (cards < 1)
+            printf("Number of cards must be positive number\n");
+        else
+            printf("Number of cards must be 100 or less\n");
+        printf("How many cards to practice?\n");
+        scanf("%d", &cards);
+    }
+    
     srand(time(0));  // seed it
     
     int randomNumber;
     
+    while(getchar()!='\n'); // clean stdin
+    
     if (input == 1)
     {
-        for (int i=0; i<20; i++)
+        for (int i=0; i<cards; i++)
         {
             randomNumber = rand() % numOfLines;
-            printf("%s\n", cantonese[randomNumber]);
+            printf("%s", cantonese[randomNumber]);
             while(getchar()!='\n'); // clean stdin
-            getchar(); // wait for ENTER
-            printf("%s\n", english[randomNumber]);
+            printf("%s\n\n", english[randomNumber]);
         }
     }
     else
     {
-        for (int i=0; i<20; i++)
+        for (int i=0; i<cards; i++)
         {
             randomNumber = rand() % numOfLines;
-            printf("%s\n", english[randomNumber]);
+            printf("%s", english[randomNumber]);
             while(getchar()!='\n'); // clean stdin
-            getchar(); // wait for ENTER
-            printf("%s\n", cantonese[randomNumber]);
+            printf("%s\n\n", cantonese[randomNumber]);
         }
     }
     
@@ -277,7 +321,7 @@ int main(int argc, char *argv[])
     free(cantonese);
     free(english);
     
-    printf("\nDone\n");
+    printf("Done\n");
     
     return 0;
 }
