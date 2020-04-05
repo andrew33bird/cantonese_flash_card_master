@@ -2,6 +2,10 @@
 ** Project: Chinese Flash Cards
 ** Current Version: 0.0.0.2
 ********************************************************************************
+** Version 0.0.0.3 *************************************************************
+** 5/8/17 Rev 0.0.0.3 compiles, but test.txt always throws error -1200
+** 5/8/17 Creates 50 lines of 100 characters.  Throws error if exceeds 
+        -1400 Error if line count > 50 or character count > 100
 ********************************************************************************
 ** Version 0.0.0.2 *************************************************************
 ** 5/6/17 Rev 0.0.0.2 does not compile.  Variable length array is not in C
@@ -118,6 +122,16 @@ int main(int argc, char *argv[])
     }
     fclose(f);
     
+    if (lineNumber > 50)
+    {
+        printf("Total lines must be less than 50\n");
+        exit(-1400);
+    }
+    else if (maxChar > 100)
+    {
+        printf("Highest character count must be less than 100\n");
+        exit(-1400);
+    }
     // Open file.  exit with error code if error.
     f = fopen("test.txt", "r");
     if (f == NULL)
@@ -127,9 +141,12 @@ int main(int argc, char *argv[])
     }
     
     maxChar++; // needs one for the null character
-    char lineCantonese[lineNumber][maxChar]; // x lines of y char Cantonese
-    char lineEnglish[lineNumber][maxChar]; // x lines of y char English
-    char string[maxChar]; // temp string during upload of file
+    //char lineCantonese[lineNumber][maxChar]; // x lines of y char Cantonese
+    //char lineEnglish[lineNumber][maxChar]; // x lines of y char English
+    char lineCantonese[50][100];
+    char lineEnglish[50][100];
+    //char string[maxChar]; // temp string during upload of file
+    char string[100];
     int i = 0; // counter
     int line = 0;  // line number
     
