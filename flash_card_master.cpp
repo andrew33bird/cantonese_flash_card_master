@@ -1,6 +1,10 @@
 /*******************************************************************************
 ** Project: Chinese Flash Cards
-** Current Version: 0.0.0.2
+** Current Version: 0.0.0.4
+********************************************************************************
+** Version 0.0.0.4 *************************************************************
+** 5/20/17 Fixed two bugs: lines 89 and 174.
+    Started testing file read and error codes.
 ********************************************************************************
 ** Version 0.0.0.3 *************************************************************
 ** 5/8/17 Rev 0.0.0.3 compiles, but test.txt always throws error -1200
@@ -82,7 +86,7 @@ int main(int argc, char *argv[])
             }
             else
             {
-                pipeRead = 0;
+                pipeRead = 1; // fixed bug in 0.0.0.4
             }
         }
         else
@@ -141,11 +145,8 @@ int main(int argc, char *argv[])
     }
     
     maxChar++; // needs one for the null character
-    //char lineCantonese[lineNumber][maxChar]; // x lines of y char Cantonese
-    //char lineEnglish[lineNumber][maxChar]; // x lines of y char English
     char lineCantonese[50][100];
     char lineEnglish[50][100];
-    //char string[maxChar]; // temp string during upload of file
     char string[100];
     int i = 0; // counter
     int line = 0;  // line number
@@ -170,6 +171,8 @@ int main(int argc, char *argv[])
             string[i++] = c;
         }
     }
+    if (i != 0) // added if.  Prev last lineEnlish wasn't written
+        strcpy(lineEnglish[line], string);
     
     printf("Cantonese: %s\n", lineCantonese[0]);
     printf("English: %s\n", lineEnglish[0]);
