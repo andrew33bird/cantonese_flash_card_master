@@ -1,6 +1,13 @@
 /*******************************************************************************
 ** Project: Chinese Flash Cards
-** Current Version: 0.0.2.8
+** Current Version: 0.0.2.9
+*******************************************************************************/
+/* Version 0.0.2.9 *************************************************************
+** 8/16/17 Fixed bug in 0.0.2.8.  Wasn't printing the shuffled value
+    Fixed bug on line 364.  Order of 'for' loop arguments wrong
+    Fixed bug on line 113.  Array passed to shuffle starts at 0
+    Created promptUser function to move user input, prompt, and range check to
+    separate function.
 *******************************************************************************/
 /* Version 0.0.2.8 *************************************************************
 ** 8/15/17 Moved all functions below main().  Created function prototypes
@@ -66,11 +73,12 @@ int fileScan(char *fileName, int *maxLine, int *lineNumber);
 int check(int rc);
 int fillLanguageStrings(char *fileName, char **lang0, char **lang1, int lineNumber);
 int shuffle(int *array, int length);
+int promptUser(char *promptString, int *userInput, int min, int max);
 
 int main(int argc, char *argv[])
 {
     char versionString[20];
-    strcpy(versionString, "0.0.2.8");
+    strcpy(versionString, "0.0.2.9");
     inputArgumentsCheck(argc, versionString);
     
     int currentMaxLine = 0; // max characters per line of current file
@@ -105,7 +113,7 @@ int main(int argc, char *argv[])
     // end memory allocation
     
     for (int i=0; i<numOfLines; i++) // fill randomCard array with unshuffled deck
-        randomCard[i] = i + 1;
+        randomCard[i] = i; // fixed in 0.0.2.9 (used to be = i + 1)
     
     int lineNumber = 0; // current line number
     
@@ -113,32 +121,15 @@ int main(int argc, char *argv[])
             lineNumber = check(fillLanguageStrings(argv[i], cantonese, english, lineNumber));
     
     // Gather User input at beginning
-    int input;
-    printf("Which do you want to work on?  Type 1 or 2 and hit enter\n");
-    printf("\n1. Computer gives Cantonese\n");
-    printf("2. Computer gives English\n");
-    scanf("%d", &input);
-    while ((input < 1) || (input > 2))
-    {
-        printf("\nInvalid entry.  Try again:\n");
-        scanf("%d", &input);
-    }
+    int input; // integer input from user
+    char promptString[1024]; // Prompt string for user input
+    strcpy(promptString,"Which do you want to work on?\n\t1. Computer gives Cantonese\n\t2. Computer gives English\nType 1 or 2 and hit enter\n");
+    promptUser(promptString, &input, 1, 2);
     
     // how many times through to go through cards
-    int cycles;
-    printf("There are %d number of cards.  How many cycles through all the cards to practice?\n",numOfLines);
-    printf("\tA cycle will go though and test on all %d cards in a random order\n",numOfLines);
-    scanf("%d", &cycles);
-    while ((cycles < 1) || (cycles > 100))
-    {
-        printf("Invalid entry.  ");
-        if (cycles < 1)
-            printf("Number of cycles must be positive number\n");
-        else
-            printf("Number of cycles must be 100 or less\n");
-        printf("How many cycles to practice?\n");
-        scanf("%d", &cycles);
-    }
+    int cycles; // number of times to go through the cards
+    sprintf(promptString,"There are %d number of cards.  How many cycles through all the cards to practice?\n\tA cycle will go though and test on all %d cards in a random order\n", numOfLines, numOfLines);
+    promptUser(promptString, &cycles, 1, 100);
     
     while(getchar()!='\n'); // clean stdin
     
@@ -149,9 +140,9 @@ int main(int argc, char *argv[])
             check(shuffle(randomCard, numOfLines));
             for (int i=0;i<numOfLines;i++)
             {
-                printf("%s", cantonese[i]);
+                printf("%s", cantonese[randomCard[i]]);
                 while(getchar()!='\n'); // clean stdin
-                printf("%s\n\n", english[i]);
+                printf("%s\n\n", english[randomCard[i]]);
             }
         }
     }
@@ -162,9 +153,9 @@ int main(int argc, char *argv[])
             check(shuffle(randomCard, numOfLines));
             for (int i=0;i<numOfLines;i++)
             {
-                printf("%s", english[i]);
+                printf("%s", english[randomCard[i]]);
                 while(getchar()!='\n'); // clean stdin
-                printf("%s\n\n", cantonese[i]);
+                printf("%s\n\n", cantonese[randomCard[i]]);
             }
         }
     }
@@ -350,7 +341,7 @@ int fillLanguageStrings(char *fileName, char **lang0, char **lang1, int lineNumb
 
 /* Function takes pointer to array of card order and number of cards and then
 shuffles the card order
-Returns error code - 0 if no error */
+Returns 0 */
 int shuffle(int *array, int length)
 {
     int randomCard; // random card
@@ -358,12 +349,36 @@ int shuffle(int *array, int length)
     
     srand(time(0));  // seed it
     
-    for(int i=0;i++;i<length)
+    for(int i=0;i<length;i++) // fixed in 0.0.2.9
     {
         randomCard = rand() % length;
         tempHolder = array[i];
         array[i] = array[randomCard];
         array[randomCard] = tempHolder;
     }
+    
+    return 0;
+}
+
+/* Function takes a string, pointer to an int, and valid range.  Prints string
+as a prompt to user, then takes user input and checks it against range.
+Doesn't return until user inputs proper value
+Returs 0 */
+int promptUser(char *promptString, int *userInput, int min, int max)
+{
+    printf("%s", promptString);
+    scanf("%d", userInput);
+    while ((*userInput < min) || (*userInput > max))
+    {
+        printf("Invalid entry.  ");
+        if (*userInput < min)
+            printf("Input must be greater than %d\n", min-1);
+        else
+            printf("Input must be less than %d\n", max+1);
+        
+        printf("Re-enter value: ");
+        scanf("%d", userInput);
+    }
+    
     return 0;
 }
