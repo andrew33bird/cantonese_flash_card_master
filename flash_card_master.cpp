@@ -1,7 +1,19 @@
 /*******************************************************************************
 ** Project: Chinese Flash Cards
-** Version: 0.0.0.1
+** Current Version: 0.0.0.2
 ********************************************************************************
+********************************************************************************
+** Version 0.0.0.2 *************************************************************
+** 5/6/17 Rev 0.0.0.2 does not compile.  Variable length array is not in C
+    http://stackoverflow.com/questions/33423502/expression-did-not-evaluate-to-a-constant-c
+** 5/6/17 Opens test file, counts number of lines and max characters for a 
+    Cantonese or English string.  When scanning file, returns different error:
+        -1000 Error if can't open file
+        -1100 Error if empty line in file
+        -1200 Error if no '|' on line
+        -1300 Error if 2 '|' characters on one line
+********************************************************************************
+** Version 0.0.0.1 *************************************************************
 ** 4/29/17 Opens file test.txt and reads each line.  First part until | is
     Cantonese, after is English.  File must end with \n.  Prints Cantonese and
     English strings.
@@ -13,8 +25,9 @@
 
 int main(int argc, char *argv[])
 {
-    FILE *f;
+    FILE *f; // pointer to file
     
+    // Open file.  exit with error code if error.
     f = fopen("test.txt", "r");
     if (f == NULL)
     {
@@ -22,12 +35,103 @@ int main(int argc, char *argv[])
         exit(-1000);
     }
     
-    char lineCantonese[2][100];
-    char lineEnglish[2][100];
-    char string[100];
-    int i = 0;
-    int line = 0;
-    char c;
+    int maxChar = 0; // max character for each line of Cantonese or English
+    int numberChar = 0; // number of characters for current line
+    int lineNumber = 0; // number of lines in files
+    int newLineFlag = 1; // flag when at a new line.  Starts with new line
+    int pipeRead = 0; // ensures that a | is read for each line
+    char c; // temp char during upload of file
+    
+    while(!feof(f))
+    {
+        c = fgetc(f);
+        if ((c == '\n') || (c == '\r'))
+        {
+            if (numberChar > maxChar)
+                maxChar = numberChar;
+            numberChar = 0;
+            lineNumber++;
+            if (newLineFlag == 1)
+            {
+                printf("Error: Empty line in file");
+                exit(-1100);
+            }
+            else if (pipeRead = 0)
+            {
+                printf("Error: Must have '|' on each line to divide Cantonese and English");
+                exit(-1200);
+            }
+            else
+            {
+                newLineFlag = 1;
+            }
+        }
+        else if (c == '|')
+        {
+            if (numberChar > maxChar)
+                maxChar = numberChar;
+            numberChar = 0;
+            if (pipeRead == 1)
+            {
+                printf("Error: 2 '|' characters on the same line");
+                exit(-1300);
+            }
+            else
+            {
+                pipeRead = 0;
+            }
+        }
+        else
+        {
+            numberChar++;
+            if (newLineFlag == 1)
+            {
+                lineNumber++;
+                newLineFlag = 0;
+            }
+        }
+    }
+    if (newLineFlag == 0)
+    {
+        if ((c == '|') && (pipeRead == 1))
+        {
+            printf("Error: 2 '|' characters on the same line");
+            exit(-1300);
+        }
+        else if ((c != '|') && (pipeRead == 0))
+        {
+            printf("Error: Must have '|' on each line to divide Cantonese and English");
+            exit(-1200);
+        }
+        else if (c == '|')
+        {
+            if (numberChar > maxChar)
+                maxChar = numberChar;
+            lineNumber++;
+        }
+        else
+        {
+            if (numberChar > maxChar)
+                maxChar = numberChar;
+            lineNumber++;
+        }
+    }
+    fclose(f);
+    
+    // Open file.  exit with error code if error.
+    f = fopen("test.txt", "r");
+    if (f == NULL)
+    {
+        printf("Error opening file");
+        exit(-1000);
+    }
+    
+    maxChar++; // needs one for the null character
+    char lineCantonese[lineNumber][maxChar]; // x lines of y char Cantonese
+    char lineEnglish[lineNumber][maxChar]; // x lines of y char English
+    char string[maxChar]; // temp string during upload of file
+    int i = 0; // counter
+    int line = 0;  // line number
     
     while (!feof(f))
     {
